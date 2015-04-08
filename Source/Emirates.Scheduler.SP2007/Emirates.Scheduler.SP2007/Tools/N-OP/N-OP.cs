@@ -1,0 +1,23 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Xml;
+using System.IO;
+using System.Xml.Serialization;
+using Microsoft.SharePoint;
+using Emirates.Scheduler.SP2007.Tools.Security;
+
+namespace Emirates.Scheduler.SP2007.Tools
+{
+    public class NOP : iTool
+    {
+        //No-Operation Tool
+        Result iTool.Execute(Job job)
+        {
+            Result result = new Result(job.Id);
+
+            return result;
+        }
+    }
+}
