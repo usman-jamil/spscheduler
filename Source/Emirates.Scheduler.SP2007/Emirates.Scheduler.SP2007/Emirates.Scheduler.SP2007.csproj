@@ -70,6 +70,8 @@
     <Compile Include="Scheduler.cs" />
     <Compile Include="Tools\ComparisonReport\ComparisonReport.cs" />
     <Compile Include="Tools\ComparisonReport\Serialize.cs" />
+    <Compile Include="Tools\ListReport\ListReport.cs" />
+    <Compile Include="Tools\ListReport\Serialize.cs" />
     <Compile Include="Tools\ExportAlerts\ExportAlerts.cs" />
     <Compile Include="Tools\ExportAlerts\Serialize.cs" />
     <Compile Include="Tools\ExportSecurity\ExportSecurity.cs" />

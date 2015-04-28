@@ -10,14 +10,24 @@ using Microsoft.SharePoint.Administration.Claims;
 
 namespace Emirates.Scheduler.SP2013.Tools
 {
+    enum ImportOptions
+    {
+        All = 0,
+        Folders,
+        Files
+    }
+
     public class ImportSecurity : iTool
     {
         StringBuilder output = null;
 
-        Result iTool.Execute(Job job)
+        public ImportSecurity()
         {
             output = new StringBuilder();
+        }
 
+        Result iTool.Execute(Job job)
+        {
             Result result = new Result(job.Id);
             string inputXml = job.DownloadAttachment();
 
@@ -30,13 +40,15 @@ namespace Emirates.Scheduler.SP2013.Tools
                 string sourceUrl = siteNode.Attributes["source"].Value;
                 string url = siteNode.Attributes["target"].Value;
 
-                output.Append(string.Format("updating web: {0}", url));
+                output.Append(string.Format("updating web: {0}" + Environment.NewLine, url));
                 CheckLists(siteNode, url);
                 CheckFolders(siteNode, url);
                 CheckFiles(siteNode, url);
             }
 
             string tmpFile = Scheduler.Instance.CreateTmpFile();
+
+            System.IO.File.WriteAllText(tmpFile, output.ToString());
 
             result.AddFile(tmpFile);
             return result;
@@ -58,20 +70,43 @@ namespace Emirates.Scheduler.SP2013.Tools
 
         private void CheckLists(XmlNode siteNode, string url)
         {
+            bool containsIgnoreInheritance = ContainsAttribute("ignoreinheritance", siteNode);
+            bool containsImportOptions = ContainsAttribute("import", siteNode);
+
+            bool ignoreInheritance = containsIgnoreInheritance ?
+                Boolean.Parse(siteNode.Attributes["ignoreinheritance"].Value) :
+                true;
+
+            ImportOptions importOptions = containsImportOptions ?
+                (ImportOptions)Enum.Parse(typeof(ImportOptions), siteNode.Attributes["import"].Value) :
+                ImportOptions.All;
+
+            if (importOptions == ImportOptions.Files)
+                return;
+
             using (SPWeb web = new SPSite(url).OpenWeb())
             {
                 XmlNodeList listNodes = siteNode.SelectNodes("folder[@list='true']");
                 foreach (XmlNode listNode in listNodes)
                 {
                     string listTitle = listNode.Attributes["folder"].Value;
-                    Console.WriteLine(listTitle);
+
                     try
                     {
                         SPList list = web.Lists[listTitle];
-                        output.Append(string.Format("checking list: {0}", listTitle));
-                        SPRoleAssignmentCollection roleAssignments = list.RoleAssignments;
-                        if (list.HasUniqueRoleAssignments)
+                        output.Append(string.Format("checking list: {0}" + Environment.NewLine, listTitle));
+
+                        bool breakInheritance = !list.HasUniqueRoleAssignments && !ignoreInheritance;
+                        bool applyPermissions = list.HasUniqueRoleAssignments || breakInheritance;
+
+                        if (applyPermissions)
                         {
+                            if (breakInheritance)
+                            {
+                                output.Append(string.Format("Breaking Inheritance!" + Environment.NewLine));
+                                list.BreakRoleInheritance(false, false);
+                            }
+
                             XmlNodeList principalGroupNodes = listNode.SelectNodes("principal[@Group='true']");
                             CheckGroups(web, list, principalGroupNodes);
 
@@ -80,10 +115,10 @@ namespace Emirates.Scheduler.SP2013.Tools
                         }
                         else
                         {
-                            output.Append(string.Format("target list: {0,20}, is inheriting permissions", listTitle));
+                            output.Append(string.Format("target list: {0,20}, is inheriting permissions" + Environment.NewLine, listTitle));
                         }
                     }
-                    catch { output.Append(string.Format("list missing: {0,20}", listTitle)); }
+                    catch { output.Append(string.Format("list missing: {0,20}" + Environment.NewLine, listTitle)); }
                 }
             }
         }
@@ -111,7 +146,7 @@ namespace Emirates.Scheduler.SP2013.Tools
                 {
                     string folderTitle = folderNode.Attributes["folder"].Value;
                     string folderUrl = folderNode.Attributes["url"].Value;
-                    output.Append(string.Format("checking folder: {0}", folderTitle));
+                    output.Append(string.Format("checking folder: {0}" + Environment.NewLine, folderUrl));
                     try
                     {
                         SPFolder folder = web.GetFolder(folderUrl);
@@ -124,7 +159,7 @@ namespace Emirates.Scheduler.SP2013.Tools
                         {
                             if (breakInheritance)
                             {
-                                output.Append(string.Format("Breaking Inheritance!"));
+                                output.Append(string.Format("Breaking Inheritance!" + Environment.NewLine));
                                 item.BreakRoleInheritance(false, false);
                             }
 
@@ -136,10 +171,10 @@ namespace Emirates.Scheduler.SP2013.Tools
                         }
                         else
                         {
-                            output.Append(string.Format("target folder: {0,20}, is inheriting permissions", folderTitle));
+                            output.Append(string.Format("target folder: {0,20}, is inheriting permissions" + Environment.NewLine, folderUrl));
                         }
                     }
-                    catch { output.Append(string.Format("folder missing: {0,20}", folderTitle)); }
+                    catch { output.Append(string.Format("folder missing: {0,20}" + Environment.NewLine, folderUrl)); }
                 }
             }
         }
@@ -168,7 +203,7 @@ namespace Emirates.Scheduler.SP2013.Tools
                 {
                     string fileTitle = fileNode.Attributes["file"].Value;
                     string fileUrl = fileNode.Attributes["url"].Value;
-                    Console.WriteLine("checking file: {0}", fileTitle);
+                    output.Append(string.Format("checking file: {0}" + Environment.NewLine, fileUrl));
                     try
                     {
                         SPFile file = web.GetFile(fileUrl);
@@ -181,7 +216,7 @@ namespace Emirates.Scheduler.SP2013.Tools
                         {
                             if (breakInheritance)
                             {
-                                output.Append(string.Format("Breaking Inheritance!"));
+                                output.Append(string.Format("Breaking Inheritance!" + Environment.NewLine));
                                 item.BreakRoleInheritance(false, false);
                             }
 
@@ -193,10 +228,10 @@ namespace Emirates.Scheduler.SP2013.Tools
                         }
                         else
                         {
-                            output.Append(string.Format("target file: {0,20}, is inheriting permissions", fileTitle));
+                            output.Append(string.Format("target file: {0,20}, is inheriting permissions" + Environment.NewLine, fileUrl));
                         }
                     }
-                    catch { output.Append(string.Format("file missing: {0,20}", fileTitle)); }
+                    catch { output.Append(string.Format("file missing: {0,20}" + Environment.NewLine, fileUrl)); }
                 }
             }
         }
@@ -243,7 +278,7 @@ namespace Emirates.Scheduler.SP2013.Tools
                     }
                     catch
                     {
-                        Console.Write("permissins missing for: {0,20}, adding new...", groupName);
+                        output.Append(string.Format("permissins missing for: {0,20}, adding new..." + Environment.NewLine, groupName));
                         SPRoleAssignment roleAssignmentNew = new SPRoleAssignment(groupPrincipal);
                         XmlNodeList roleNodes = principalGroupNode.SelectNodes("role");
                         foreach (XmlNode roleNode in roleNodes)
@@ -256,11 +291,11 @@ namespace Emirates.Scheduler.SP2013.Tools
                             roleAssignmentNew.RoleDefinitionBindings.Add(role);
                         }
                         roleAssignments.Add(roleAssignmentNew);
-                        Console.WriteLine("completed");
+                        output.Append("completed" + Environment.NewLine);
                         dirty = true;
                     }
                 }
-                catch { Console.WriteLine("group not found: {0,20}", groupName); }
+                catch { output.Append(string.Format("group not found: {0,20}" + Environment.NewLine, groupName)); }
             }
 
             return dirty;
@@ -314,7 +349,7 @@ namespace Emirates.Scheduler.SP2013.Tools
                     }
                     catch
                     {
-                        Console.Write("permissins missing for user: {0,20} with login: {1,15}, adding new...", userName, loginName);
+                        output.Append(string.Format("permissins missing for user: {0,20} with login: {1,15}, adding new..." + Environment.NewLine, userName, loginName));
                         SPRoleAssignment roleAssignmentNew = new SPRoleAssignment(userPrincipal);
                         XmlNodeList roleNodes = principalUserNode.SelectNodes("role");
                         foreach (XmlNode roleNode in roleNodes)
@@ -327,11 +362,11 @@ namespace Emirates.Scheduler.SP2013.Tools
                             roleAssignmentNew.RoleDefinitionBindings.Add(role);
                         }
                         roleAssignments.Add(roleAssignmentNew);
-                        Console.WriteLine("completed");
+                        output.Append("completed" + Environment.NewLine);
                         dirty = true;
                     }
                 }
-                catch { Console.WriteLine("user not found: {0,20} with login: {1,15}", userName, loginName); }
+                catch { output.Append(string.Format("user not found: {0,20} with login: {1,15}" + Environment.NewLine, userName, loginName)); }
             }
 
             return dirty;
@@ -357,14 +392,14 @@ namespace Emirates.Scheduler.SP2013.Tools
 
                 if (!found)
                 {
-                    Console.Write("role: {0,15} missing for principal: {1,20}, adding new...",
+                    output.Append(string.Format("role: {0,15} missing for principal: {1,20}, adding new...",
                         roleName,
-                        principalName);
+                        principalName));
 
                     SPRoleDefinition role = web.RoleDefinitions[roleName];
                     roleAssignment.RoleDefinitionBindings.Add(role);
                     roleAssignment.Update();
-                    Console.WriteLine("completed");
+                    output.Append("completed" + Environment.NewLine);
                 }
             }
         }

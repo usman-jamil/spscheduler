@@ -62,12 +62,18 @@ namespace Emirates.Scheduler.SP2007.Tools
             }
         }
 
+        private sitestructure structure;
+
+        public SiteStructure()
+        {
+            structure = new sitestructure();
+        }
+
         Result iTool.Execute(Job job)
         {
             Result result = new Result(job.Id);
 
             config siteConfig = new config();
-            sitestructure structure = new sitestructure();
             siteConfig.ReadConfig(job.DownloadAttachment());
 
             List<site> sites = new List<site>();
@@ -90,6 +96,9 @@ namespace Emirates.Scheduler.SP2007.Tools
 
                         site newSite = new site(oldUrl, newUrl);
                         structure.sites.Add(newSite);
+                        RecursiveWebCheck(spWeb, subSite.source, subSite.target);
+
+                        spWeb.Dispose();
                     }
                 }
             }
@@ -110,6 +119,29 @@ namespace Emirates.Scheduler.SP2007.Tools
             result.AddFile(tmpFile);
 
             return result;
+        }
+
+        private void RecursiveWebCheck(SPWeb oSPWeb, string source, string target)
+        {
+            foreach (SPWeb web in oSPWeb.Webs)
+            {
+                string oldUrl = web.Url;
+                string siteRelativeUrl = oldUrl.Replace(source, string.Empty);
+
+                siteRelativeUrl = siteRelativeUrl.StartsWith("/") ? siteRelativeUrl : (string.IsNullOrEmpty(siteRelativeUrl) ? siteRelativeUrl : siteRelativeUrl.Substring(1));
+                string newUrl = target + siteRelativeUrl;
+
+                site newSite = new site(oldUrl, newUrl);
+                structure.sites.Add(newSite);
+
+                if (web.Webs.Count > 0)
+                {
+                    RecursiveWebCheck(web, source, target);
+                }
+
+                web.Dispose();
+            }
+
         }
     }
 }

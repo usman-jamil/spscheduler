@@ -35,6 +35,10 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Office.Policy, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Program Files\Common Files\Microsoft Shared\Web Server Extensions\15\ISAPI\Microsoft.Office.Policy.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.SharePoint, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\Program Files\Common Files\Microsoft Shared\Web Server Extensions\15\ISAPI\Microsoft.SharePoint.dll</HintPath>
@@ -58,12 +62,16 @@
     <Compile Include="Tools\ActivateFeatures\ActivateFeatures.cs" />
     <Compile Include="Tools\Comparison\ComparisonReport.cs" />
     <Compile Include="Tools\EnableAudit\EnableAudit.cs" />
+    <Compile Include="Tools\EnableEmail\EnableEmail.cs" />
+    <Compile Include="Tools\EnableTheme\EnableTheme.cs" />
     <Compile Include="Tools\ImportAlerts\ImportAlerts.cs" />
     <Compile Include="Tools\ImportSecurity\ImportSecurity.cs" />
     <Compile Include="Tools\N-OP\N-OP.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

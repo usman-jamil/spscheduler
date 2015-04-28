@@ -10,7 +10,7 @@ namespace Emirates.Scheduler.SP2007.Tools.Structure
     [Serializable]
     public class sitestructure
     {
-        [XmlElement("Sites")]
+        [XmlElement("Site")]
         public List<site> sites;
 
         public sitestructure()

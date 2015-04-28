@@ -23,12 +23,18 @@ namespace Emirates.Scheduler.SP2007
 
                 foreach (Job job in jobs)
                 {
+                    Result result = null;
                     //Check for dependencies
                     if (scheduler.IsJobReady(job))
                     {
-                        scheduler.InitiateJob(job);
-                        Result result = job.AssociatedTool.Execute(job);
-                        scheduler.CompleteJob(result);
+                        try
+                        {
+                            scheduler.InitiateJob(job);
+                            result = job.AssociatedTool.Execute(job);
+                        }
+                        finally {
+                            scheduler.CompleteJob(result);
+                        }
                     }
                 }
             }

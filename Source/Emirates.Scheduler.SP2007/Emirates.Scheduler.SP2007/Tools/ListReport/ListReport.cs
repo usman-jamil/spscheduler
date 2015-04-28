@@ -6,11 +6,11 @@ using System.Xml;
 using System.IO;
 using System.Xml.Serialization;
 using Microsoft.SharePoint;
-using Emirates.Scheduler.SP2007.Tools.Report;
+using Emirates.Scheduler.SP2007.Tools.Lists;
 
 namespace Emirates.Scheduler.SP2007.Tools
 {
-    public class ComparisonReport : iTool
+    public class ListReport : iTool
     {
         class comparisonsite
         {
@@ -26,14 +26,12 @@ namespace Emirates.Scheduler.SP2007.Tools
 
         class config
         {
-            public string errorFile;
             public List<string> ignoreList;
 
             public List<comparisonsite> comparisonSites;
 
             public config()
             {
-                errorFile = string.Empty;
                 comparisonSites = new List<comparisonsite>();
             }
 
@@ -43,7 +41,6 @@ namespace Emirates.Scheduler.SP2007.Tools
                 xmDoc.Load(inputXml);
 
                 XmlNode rootNode = xmDoc.SelectSingleNode("Sites");
-                errorFile = rootNode.Attributes["ErrorFile"].Value;
                 string[] ignoreString = rootNode.Attributes["Ignore-List"].Value.Split(new string[] { "," }, StringSplitOptions.RemoveEmptyEntries);
                 ignoreList = new List<string>(ignoreString);
 
@@ -67,7 +64,7 @@ namespace Emirates.Scheduler.SP2007.Tools
             Result result = new Result(job.Id);
 
             config permConfig = new config();
-            comparison security = new comparison();
+            listreport security = new listreport();
             permConfig.ReadConfig(job.DownloadAttachment());
 
             List<site> sites = new List<site>();
@@ -78,7 +75,7 @@ namespace Emirates.Scheduler.SP2007.Tools
                 {
                     int listCount = 0;
                     site site = new site(compSite.source, compSite.target);
-                    List<folder> folders = new List<folder>();
+                    List<list> folders = new List<list>();
                     SPListCollection siteLists = web.Lists;
 
                     foreach (SPList list in siteLists)
@@ -86,35 +83,18 @@ namespace Emirates.Scheduler.SP2007.Tools
                         if (!permConfig.ignoreList.Contains(list.RootFolder.Name.ToLower()))
                         {
                             listCount++;
-                            folder listFolder = AddFolder(list);
-                            site.folders.Add(listFolder);
-
-                            SPQuery query = new SPQuery();
-                            query.Query = @"
-                                <Where>
-                                    <BeginsWith>
-                                        <FieldRef Name='ContentTypeId' />
-                                        <Value Type='ContentTypeId'>0x0120</Value>
-                                    </BeginsWith>
-                                </Where>";
-                            query.ViewAttributes = "Scope='RecursiveAll'";
-                            SPListItemCollection items = list.GetItems(query);
-
-                            foreach (SPListItem item in items)
-                            {
-                                folder folder = AddFolder(item.Folder, item.RoleAssignments, false, item.Folder.Files.Count);
-
-                                site.folders.Add(folder);
-                            }
+                            list listFolder = AddList(list);
+                            site.lists.Add(listFolder);
                         }
                     }
 
                     site.ListCount = listCount;
+                    site.theme = web.Theme;
                     security.sites.Add(site);
                 }
             }
 
-            XmlSerializer serializer = new XmlSerializer(typeof(comparison));
+            XmlSerializer serializer = new XmlSerializer(typeof(listreport));
             string tmpFile = Scheduler.Instance.CreateTmpFile();
             using (TextWriter stream = new StreamWriter(tmpFile))
             {
@@ -132,20 +112,19 @@ namespace Emirates.Scheduler.SP2007.Tools
             return result;
         }
 
-        private folder AddFolder(SPList list)
+        private list AddList(SPList list)
         {
-            return AddFolder(list.RootFolder, list.RoleAssignments, true, list.ItemCount);
-        }
+            list newList = new list();
+            newList.folderName = list.Title;
+            newList.serverRelativeUrl = list.RootFolder.ServerRelativeUrl;
+            newList.template = (int)list.BaseTemplate;
+            newList.templateType = list.BaseTemplate.ToString();
+            newList.baseType = list.BaseType.ToString();
+            newList.emailAlias = list.EmailAlias;
+            newList.enableAssignToEmail = list.ContentTypesEnabled;
+            newList.workflows = list.WorkflowAssociations.Count;
 
-        private folder AddFolder(SPFolder spFolder, SPRoleAssignmentCollection roleAssignments, bool isList, int itemCount)
-        {
-            folder folder = new folder();
-            folder.folderName = isList ? spFolder.ParentWeb.Lists[spFolder.ParentListId].Title : spFolder.Name;
-            folder.serverRelativeUrl = spFolder.ServerRelativeUrl;
-            folder.isSharePointList = isList;
-            folder.itemCount = itemCount;
-
-            return folder;
+            return newList;
         }
     }
 }

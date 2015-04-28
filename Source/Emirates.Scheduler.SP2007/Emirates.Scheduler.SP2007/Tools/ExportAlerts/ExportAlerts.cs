@@ -85,13 +85,22 @@ namespace Emirates.Scheduler.SP2007.Tools
                     {
                         try
                         {
+                            string url = (spAlert.List.BaseType == SPBaseType.DocumentLibrary) ? 
+                                spAlert.Item.File.ServerRelativeUrl :
+                                spAlert.Item.Url;
+                            bool isFile = (spAlert.List.BaseType == SPBaseType.DocumentLibrary) ? 
+                                true :
+                                false;
+
                             if (spAlert.AlertType == SPAlertType.List)
                             {
                                 site.AddAlert(spAlert.User.LoginName,
                                     spAlert.List.Title,
                                     spAlert.EventType.ToString(),
                                     spAlert.AlertFrequency.ToString(),
-                                    spAlert.AlertType.ToString());
+                                    spAlert.AlertType.ToString(),
+                                    url,
+                                    isFile);
                             }
                             else
                             {
@@ -100,7 +109,9 @@ namespace Emirates.Scheduler.SP2007.Tools
                                     spAlert.EventType.ToString(),
                                     spAlert.AlertFrequency.ToString(),
                                     spAlert.AlertType.ToString(),
-                                    spAlert.ItemID);
+                                    spAlert.ItemID,
+                                    url,
+                                    isFile);
                             }
                         }
                         catch { }

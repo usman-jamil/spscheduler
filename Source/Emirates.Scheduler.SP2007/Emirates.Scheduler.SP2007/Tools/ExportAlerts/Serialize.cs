@@ -46,14 +46,14 @@ namespace Emirates.Scheduler.SP2007.Tools.Alerts
             alerts = new List<alert>();
         }
 
-        public void AddAlert(string userName, string listName, string eventType, string alertFrequency, string alertType)
+        public void AddAlert(string userName, string listName, string eventType, string alertFrequency, string alertType, string url, bool isFile)
         {
-            alerts.Add(new alert(userName, listName, eventType, alertFrequency, alertType, 0));
+            alerts.Add(new alert(userName, listName, eventType, alertFrequency, alertType, 0, url, isFile));
         }
 
-        public void AddAlert(string userName, string listName, string eventType, string alertFrequency, string alertType, int itemId)
+        public void AddAlert(string userName, string listName, string eventType, string alertFrequency, string alertType, int itemId, string url, bool isFile)
         {
-            alerts.Add(new alert(userName, listName, eventType, alertFrequency, alertType, itemId));
+            alerts.Add(new alert(userName, listName, eventType, alertFrequency, alertType, itemId, url, isFile));
         }
     }
 
@@ -72,6 +72,10 @@ namespace Emirates.Scheduler.SP2007.Tools.Alerts
         public string alertType;
         [XmlAttribute("id")]
         public int itemId;
+        [XmlAttribute("url")]
+        public string url;
+        [XmlAttribute("isfile")]
+        public bool isFile;
 
         public alert()
         {
@@ -80,10 +84,12 @@ namespace Emirates.Scheduler.SP2007.Tools.Alerts
             eventType = string.Empty;
             frequency = string.Empty;
             alertType = string.Empty;
+            url = string.Empty;
+            isFile = false;
             itemId = 0;
         }
         
-        public alert(string userName, string listName, string eventType, string frequency, string alertType, int itemId)
+        public alert(string userName, string listName, string eventType, string frequency, string alertType, int itemId, string url, bool isFile)
         {
             this.userName = userName;
             this.listName = listName;
@@ -91,6 +97,8 @@ namespace Emirates.Scheduler.SP2007.Tools.Alerts
             this.frequency = frequency;
             this.alertType = alertType;
             this.itemId = itemId;
+            this.isFile = isFile;
+            this.url = url;
         }
     }
 }

@@ -116,6 +116,9 @@ namespace Emirates.Scheduler.SP2007
 
         public void CompleteJob(Result result)
         {
+            if (result == null)
+                return;
+
             string sWeb = System.Configuration.ConfigurationManager.AppSettings["Server"];
             string sList = System.Configuration.ConfigurationManager.AppSettings["List"];
             uint itemsToProcess = Convert.ToUInt32(System.Configuration.ConfigurationManager.AppSettings["ItemsToProcess"]);

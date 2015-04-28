@@ -63,6 +63,14 @@ namespace Emirates.Scheduler.SP2013
                 case "import alerts":
                     toolToExecute = new ImportAlerts();
                     break;
+
+                case "enable email":
+                    toolToExecute = new EnableEmail();
+                    break;
+
+                case "enable theme":
+                    toolToExecute = new EnableTheme();
+                    break;
             }
 
             return toolToExecute;

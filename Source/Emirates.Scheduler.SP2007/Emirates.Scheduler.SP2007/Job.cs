@@ -59,6 +59,10 @@ namespace Emirates.Scheduler.SP2007
                 case "site structure":
                     toolToExecute = new SiteStructure();
                     break;
+
+                case "list report":
+                    toolToExecute = new ListReport();
+                    break;
             }
 
             return toolToExecute;
