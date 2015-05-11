@@ -61,6 +61,7 @@
     <Compile Include="Scheduler.cs" />
     <Compile Include="Tools\ActivateFeatures\ActivateFeatures.cs" />
     <Compile Include="Tools\Comparison\ComparisonReport.cs" />
+    <Compile Include="Tools\DeleteAlerts\DeleteAlerts.cs" />
     <Compile Include="Tools\EnableAudit\EnableAudit.cs" />
     <Compile Include="Tools\EnableEmail\EnableEmail.cs" />
     <Compile Include="Tools\EnableTheme\EnableTheme.cs" />

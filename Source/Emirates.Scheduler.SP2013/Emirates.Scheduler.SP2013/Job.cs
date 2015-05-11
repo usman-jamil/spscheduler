@@ -71,6 +71,10 @@ namespace Emirates.Scheduler.SP2013
                 case "enable theme":
                     toolToExecute = new EnableTheme();
                     break;
+
+                case "delete alerts":
+                    toolToExecute = new DeleteAlerts();
+                    break;
             }
 
             return toolToExecute;

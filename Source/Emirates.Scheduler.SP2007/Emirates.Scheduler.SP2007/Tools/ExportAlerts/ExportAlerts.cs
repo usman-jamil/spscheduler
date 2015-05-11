@@ -75,49 +75,52 @@ namespace Emirates.Scheduler.SP2007.Tools
             {
                 using (SPWeb web = new SPSite(permSite.source).OpenWeb())
                 {
-                    Console.WriteLine(web.Url);
-                    site site = new site(permSite.source, permSite.target);
-                    SPListCollection siteLists = web.Lists;
-                    SPAlertCollection allAlerts = web.Alerts;
-                    Console.WriteLine(allAlerts.Count);
-
-                    foreach (SPAlert spAlert in allAlerts)
+                    try
                     {
-                        try
+                        Console.WriteLine(web.Url);
+                        site site = new site(permSite.source, permSite.target);
+                        SPListCollection siteLists = web.Lists;
+                        SPAlertCollection allAlerts = web.Alerts;
+                        Console.WriteLine(allAlerts.Count);
+
+                        foreach (SPAlert spAlert in allAlerts)
                         {
-                            string url = (spAlert.List.BaseType == SPBaseType.DocumentLibrary) ? 
-                                spAlert.Item.File.ServerRelativeUrl :
-                                spAlert.Item.Url;
-                            bool isFile = (spAlert.List.BaseType == SPBaseType.DocumentLibrary) ? 
-                                true :
-                                false;
-
-                            if (spAlert.AlertType == SPAlertType.List)
+                            try
                             {
-                                site.AddAlert(spAlert.User.LoginName,
-                                    spAlert.List.Title,
-                                    spAlert.EventType.ToString(),
-                                    spAlert.AlertFrequency.ToString(),
-                                    spAlert.AlertType.ToString(),
-                                    url,
-                                    isFile);
+                                if (spAlert.AlertType == SPAlertType.List)
+                                {
+                                    site.AddAlert(spAlert.User.LoginName,
+                                        spAlert.List.Title,
+                                        spAlert.EventType.ToString(),
+                                        spAlert.AlertFrequency.ToString(),
+                                        spAlert.AlertType.ToString(),
+                                        string.Empty,
+                                        false);
+                                }
+                                else
+                                {
+                                    string url = (spAlert.List.BaseType == SPBaseType.DocumentLibrary) ?
+                                        spAlert.Item.File.ServerRelativeUrl :
+                                        spAlert.Item.Url;
+                                    bool isFile = (spAlert.List.BaseType == SPBaseType.DocumentLibrary) ?
+                                        true :
+                                        false;
+                                    site.AddAlert(spAlert.User.LoginName,
+                                        spAlert.List.Title,
+                                        spAlert.EventType.ToString(),
+                                        spAlert.AlertFrequency.ToString(),
+                                        spAlert.AlertType.ToString(),
+                                        spAlert.ItemID,
+                                        url,
+                                        isFile);
+                                }
                             }
-                            else
-                            {
-                                site.AddAlert(spAlert.User.LoginName,
-                                    spAlert.List.Title,
-                                    spAlert.EventType.ToString(),
-                                    spAlert.AlertFrequency.ToString(),
-                                    spAlert.AlertType.ToString(),
-                                    spAlert.ItemID,
-                                    url,
-                                    isFile);
-                            }
+                            catch (Exception ex) { Console.WriteLine(ex.Message); }
                         }
-                        catch { }
-                    }
 
-                    siteNotifications.sites.Add(site);
+                        siteNotifications.sites.Add(site);
+                    }
+                    catch (Exception ex) { Console.WriteLine(ex.Message); }
                 }
             }
 
