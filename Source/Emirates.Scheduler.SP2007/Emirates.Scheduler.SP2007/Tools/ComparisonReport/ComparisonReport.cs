@@ -68,6 +68,7 @@ namespace Emirates.Scheduler.SP2007.Tools
 
             config permConfig = new config();
             comparison security = new comparison();
+            Helper helper = Helper.Instance;
             permConfig.ReadConfig(job.DownloadAttachment());
 
             List<site> sites = new List<site>();
@@ -87,6 +88,11 @@ namespace Emirates.Scheduler.SP2007.Tools
                         {
                             listCount++;
                             folder listFolder = AddFolder(list);
+
+                            listFolder.serverRelativeUrl = helper.MapServerRelativeUrl(listFolder.serverRelativeUrl,
+                                compSite.source,
+                                compSite.target);
+
                             site.folders.Add(listFolder);
 
                             SPQuery query = new SPQuery();
@@ -102,7 +108,12 @@ namespace Emirates.Scheduler.SP2007.Tools
 
                             foreach (SPListItem item in items)
                             {
-                                folder folder = AddFolder(item.Folder, item.RoleAssignments, false, item.Folder.Files.Count);
+                                folder folder = AddFolder(item.Folder, false, item.Folder.Files.Count);
+
+                                string updatedUrl = helper.MapServerRelativeUrl(folder.serverRelativeUrl,
+                                    compSite.source,
+                                    compSite.target);
+                                folder.serverRelativeUrl = updatedUrl;
 
                                 site.folders.Add(folder);
                             }
@@ -118,7 +129,7 @@ namespace Emirates.Scheduler.SP2007.Tools
             string tmpFile = Scheduler.Instance.CreateTmpFile();
             using (TextWriter stream = new StreamWriter(tmpFile))
             {
-                using (XmlWriter writer = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true }))
+                using (XmlWriter writer = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true, CheckCharacters = true }))
                 {
                     writer.WriteStartDocument();
                     serializer.Serialize(writer, security);
@@ -134,13 +145,16 @@ namespace Emirates.Scheduler.SP2007.Tools
 
         private folder AddFolder(SPList list)
         {
-            return AddFolder(list.RootFolder, list.RoleAssignments, true, list.ItemCount);
+            return AddFolder(list.RootFolder, true, list.ItemCount);
         }
 
-        private folder AddFolder(SPFolder spFolder, SPRoleAssignmentCollection roleAssignments, bool isList, int itemCount)
+        private folder AddFolder(SPFolder spFolder, bool isList, int itemCount)
         {
+            Helper helper = Helper.Instance;
+
             folder folder = new folder();
             folder.folderName = isList ? spFolder.ParentWeb.Lists[spFolder.ParentListId].Title : spFolder.Name;
+            folder.folderName = folder.folderName.Replace("\v", " ");
             folder.serverRelativeUrl = spFolder.ServerRelativeUrl;
             folder.isSharePointList = isList;
             folder.itemCount = itemCount;

@@ -92,6 +92,13 @@ namespace Emirates.Scheduler.SP2007.Tools
                             {
                                 folder folder = AddFolder(list);
 
+                                Helper helper = Helper.Instance;
+
+                                string updatedUrl = helper.MapServerRelativeUrl(folder.serverRelativeUrl,
+                                    permSite.source,
+                                    permSite.target);
+                                folder.serverRelativeUrl = updatedUrl;
+
                                 site.folders.Add(folder);
                             }
 
@@ -112,6 +119,13 @@ namespace Emirates.Scheduler.SP2007.Tools
                                 {
                                     folder folder = AddFolder(item.Folder, item.RoleAssignments, false);
 
+                                    Helper helper = Helper.Instance;
+
+                                    string updatedUrl = helper.MapServerRelativeUrl(folder.serverRelativeUrl,
+                                        permSite.source,
+                                        permSite.target);
+                                    folder.serverRelativeUrl = updatedUrl;
+
                                     site.folders.Add(folder);
                                 }
 
@@ -121,6 +135,13 @@ namespace Emirates.Scheduler.SP2007.Tools
 
                                     foreach (file uniqueSPFile in uniqueSPFiles)
                                     {
+                                        Helper helper = Helper.Instance;
+
+                                        string updatedUrl = helper.MapServerRelativeUrl(uniqueSPFile.serverRelativeUrl,
+                                            permSite.source,
+                                            permSite.target);
+                                        uniqueSPFile.serverRelativeUrl = updatedUrl;
+
                                         site.files.Add(uniqueSPFile);
                                     }
                                 }
@@ -183,7 +204,9 @@ namespace Emirates.Scheduler.SP2007.Tools
         {
             folder folder = new folder();
             folder.folderName = isList ? spFolder.ParentWeb.Lists[spFolder.ParentListId].Title : spFolder.Name;
+            folder.folderName = folder.folderName.Replace("\v", " ");
             folder.serverRelativeUrl = spFolder.ServerRelativeUrl;
+
             folder.isSharePointList = isList;
 
             foreach (SPRoleAssignment roleAssignment in roleAssignments)

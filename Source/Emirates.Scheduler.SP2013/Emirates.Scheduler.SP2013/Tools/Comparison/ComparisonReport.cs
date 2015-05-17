@@ -33,8 +33,15 @@ namespace Emirates.Scheduler.SP2013.Tools
                 string url = siteNode.Attributes["target"].Value;
 
                 output.Append(string.Format("comparing web: {0}" + Environment.NewLine, url));
-                CheckLists(siteNode, url);
-                CheckFolders(siteNode, url);
+                try
+                {
+                    if (CheckWeb(siteNode, url))
+                    {
+                        CheckLists(siteNode, url);
+                        CheckFolders(siteNode, url);
+                    }
+                }
+                catch { output.Append(string.Format("web missing: {0,20}" + Environment.NewLine, url)); }
             }
 
             string tmpFile = Scheduler.Instance.CreateTmpFile();
@@ -57,6 +64,22 @@ namespace Emirates.Scheduler.SP2013.Tools
             catch { }
 
             return found;
+        }
+
+        private bool CheckWeb(XmlNode siteNode, string url)
+        {
+            bool valid = false;
+
+            try
+            {
+                using (SPWeb web = new SPSite(url).OpenWeb())
+                {
+                    valid = web.Exists;
+                }
+            }
+            catch { }
+
+            return valid;
         }
 
         private void CheckLists(XmlNode siteNode, string url)

@@ -84,6 +84,14 @@ namespace Emirates.Scheduler.SP2007.Tools
                         {
                             listCount++;
                             list listFolder = AddList(list);
+
+                            Helper helper = Helper.Instance;
+
+                            string updatedUrl = helper.MapServerRelativeUrl(listFolder.serverRelativeUrl,
+                                compSite.source,
+                                compSite.target);
+                            listFolder.serverRelativeUrl = updatedUrl;
+
                             site.lists.Add(listFolder);
                         }
                     }
@@ -116,6 +124,7 @@ namespace Emirates.Scheduler.SP2007.Tools
         {
             list newList = new list();
             newList.folderName = list.Title;
+            newList.folderName = newList.folderName.Replace("\v", " ");
             newList.serverRelativeUrl = list.RootFolder.ServerRelativeUrl;
             newList.template = (int)list.BaseTemplate;
             newList.templateType = list.BaseTemplate.ToString();

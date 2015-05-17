@@ -63,6 +63,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helper.cs" />
     <Compile Include="iTool.cs" />
     <Compile Include="Result.cs" />
     <Compile Include="Program.cs" />
