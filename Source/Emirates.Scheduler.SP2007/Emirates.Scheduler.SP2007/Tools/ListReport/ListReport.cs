@@ -80,20 +80,24 @@ namespace Emirates.Scheduler.SP2007.Tools
 
                     foreach (SPList list in siteLists)
                     {
-                        if (!permConfig.ignoreList.Contains(list.RootFolder.Name.ToLower()))
+                        try
                         {
-                            listCount++;
-                            list listFolder = AddList(list);
+                            if (!permConfig.ignoreList.Contains(list.RootFolder.Name.ToLower()))
+                            {
+                                listCount++;
+                                list listFolder = AddList(list);
 
-                            Helper helper = Helper.Instance;
+                                Helper helper = Helper.Instance;
 
-                            string updatedUrl = helper.MapServerRelativeUrl(listFolder.serverRelativeUrl,
-                                compSite.source,
-                                compSite.target);
-                            listFolder.serverRelativeUrl = updatedUrl;
+                                string updatedUrl = helper.MapServerRelativeUrl(listFolder.serverRelativeUrl,
+                                    compSite.source,
+                                    compSite.target);
+                                listFolder.serverRelativeUrl = updatedUrl;
 
-                            site.lists.Add(listFolder);
+                                site.lists.Add(listFolder);
+                            }
                         }
+                        catch (Exception ex) { Console.WriteLine(list.Title); Console.WriteLine(ex.Message); }
                     }
 
                     site.ListCount = listCount;

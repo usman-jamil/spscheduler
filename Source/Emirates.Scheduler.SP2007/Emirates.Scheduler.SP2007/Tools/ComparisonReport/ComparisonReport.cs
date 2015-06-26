@@ -84,40 +84,44 @@ namespace Emirates.Scheduler.SP2007.Tools
 
                     foreach (SPList list in siteLists)
                     {
-                        if (!permConfig.ignoreList.Contains(list.RootFolder.Name.ToLower()))
+                        try
                         {
-                            listCount++;
-                            folder listFolder = AddFolder(list);
+                            if (!permConfig.ignoreList.Contains(list.RootFolder.Name.ToLower()))
+                            {
+                                listCount++;
+                                folder listFolder = AddFolder(list);
 
-                            listFolder.serverRelativeUrl = helper.MapServerRelativeUrl(listFolder.serverRelativeUrl,
-                                compSite.source,
-                                compSite.target);
+                                listFolder.serverRelativeUrl = helper.MapServerRelativeUrl(listFolder.serverRelativeUrl,
+                                    compSite.source,
+                                    compSite.target);
 
-                            site.folders.Add(listFolder);
+                                site.folders.Add(listFolder);
 
-                            SPQuery query = new SPQuery();
-                            query.Query = @"
+                                SPQuery query = new SPQuery();
+                                query.Query = @"
                                 <Where>
                                     <BeginsWith>
                                         <FieldRef Name='ContentTypeId' />
                                         <Value Type='ContentTypeId'>0x0120</Value>
                                     </BeginsWith>
                                 </Where>";
-                            query.ViewAttributes = "Scope='RecursiveAll'";
-                            SPListItemCollection items = list.GetItems(query);
+                                query.ViewAttributes = "Scope='RecursiveAll'";
+                                SPListItemCollection items = list.GetItems(query);
 
-                            foreach (SPListItem item in items)
-                            {
-                                folder folder = AddFolder(item.Folder, false, item.Folder.Files.Count);
+                                foreach (SPListItem item in items)
+                                {
+                                    folder folder = AddFolder(item.Folder, false, item.Folder.Files.Count);
 
-                                string updatedUrl = helper.MapServerRelativeUrl(folder.serverRelativeUrl,
-                                    compSite.source,
-                                    compSite.target);
-                                folder.serverRelativeUrl = updatedUrl;
+                                    string updatedUrl = helper.MapServerRelativeUrl(folder.serverRelativeUrl,
+                                        compSite.source,
+                                        compSite.target);
+                                    folder.serverRelativeUrl = updatedUrl;
 
-                                site.folders.Add(folder);
+                                    site.folders.Add(folder);
+                                }
                             }
                         }
+                        catch (Exception ex) { Console.WriteLine(list.Title); Console.WriteLine(ex.Message); }
                     }
 
                     site.ListCount = listCount;

@@ -86,38 +86,13 @@ namespace Emirates.Scheduler.SP2007.Tools
 
                     foreach (SPList list in siteLists)
                     {
-                        if (!permConfig.ignoreList.Contains(list.RootFolder.Name.ToLower()))
+                        try
                         {
-                            if (list.HasUniqueRoleAssignments)
+                            if (!permConfig.ignoreList.Contains(list.RootFolder.Name.ToLower()))
                             {
-                                folder folder = AddFolder(list);
-
-                                Helper helper = Helper.Instance;
-
-                                string updatedUrl = helper.MapServerRelativeUrl(folder.serverRelativeUrl,
-                                    permSite.source,
-                                    permSite.target);
-                                folder.serverRelativeUrl = updatedUrl;
-
-                                site.folders.Add(folder);
-                            }
-
-                            SPQuery query = new SPQuery();
-                            query.Query = @"
-                                <Where>
-                                    <BeginsWith>
-                                        <FieldRef Name='ContentTypeId' />
-                                        <Value Type='ContentTypeId'>0x0120</Value>
-                                    </BeginsWith>
-                                </Where>";
-                            query.ViewAttributes = "Scope='RecursiveAll'";
-                            SPListItemCollection items = list.GetItems(query);
-
-                            foreach (SPListItem item in items)
-                            {
-                                if (item.HasUniqueRoleAssignments)
+                                if (list.HasUniqueRoleAssignments)
                                 {
-                                    folder folder = AddFolder(item.Folder, item.RoleAssignments, false);
+                                    folder folder = AddFolder(list);
 
                                     Helper helper = Helper.Instance;
 
@@ -129,46 +104,80 @@ namespace Emirates.Scheduler.SP2007.Tools
                                     site.folders.Add(folder);
                                 }
 
-                                if (!permSite.ignoreFiles)
-                                {
-                                    List<file> uniqueSPFiles = GetUniquePermissionFiles(list, item);
+                                SPQuery query = new SPQuery();
+                                query.Query = @"
+                                <Where>
+                                    <BeginsWith>
+                                        <FieldRef Name='ContentTypeId' />
+                                        <Value Type='ContentTypeId'>0x0120</Value>
+                                    </BeginsWith>
+                                </Where>";
+                                query.ViewAttributes = "Scope='RecursiveAll'";
+                                SPListItemCollection items = list.GetItems(query);
 
-                                    foreach (file uniqueSPFile in uniqueSPFiles)
+                                foreach (SPListItem item in items)
+                                {
+                                    if (item.HasUniqueRoleAssignments)
                                     {
+                                        folder folder = AddFolder(item.Folder, item.RoleAssignments, false);
+
                                         Helper helper = Helper.Instance;
 
-                                        string updatedUrl = helper.MapServerRelativeUrl(uniqueSPFile.serverRelativeUrl,
+                                        string updatedUrl = helper.MapServerRelativeUrl(folder.serverRelativeUrl,
                                             permSite.source,
                                             permSite.target);
-                                        uniqueSPFile.serverRelativeUrl = updatedUrl;
+                                        folder.serverRelativeUrl = updatedUrl;
 
-                                        site.files.Add(uniqueSPFile);
+                                        site.folders.Add(folder);
+                                    }
+
+                                    if (!permSite.ignoreFiles)
+                                    {
+                                        List<file> uniqueSPFiles = GetUniquePermissionFiles(list, item);
+
+                                        foreach (file uniqueSPFile in uniqueSPFiles)
+                                        {
+                                            Helper helper = Helper.Instance;
+
+                                            string updatedUrl = helper.MapServerRelativeUrl(uniqueSPFile.serverRelativeUrl,
+                                                permSite.source,
+                                                permSite.target);
+                                            uniqueSPFile.serverRelativeUrl = updatedUrl;
+
+                                            site.files.Add(uniqueSPFile);
+                                        }
                                     }
                                 }
                             }
                         }
+                        catch (Exception ex) { Console.WriteLine(list.Title); Console.WriteLine(ex.Message); }
                     }
 
                     security.sites.Add(site);
                 }
             }
 
-            XmlSerializer serializer = new XmlSerializer(typeof(security));
-            string tmpFile = Scheduler.Instance.CreateTmpFile();
-            using (TextWriter stream = new StreamWriter(tmpFile))
+            try
             {
-                using (XmlWriter writer = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true }))
-                {
-                    writer.WriteStartDocument();
-                    writer.WriteComment(@"You can control what to import on the target by setting the Import attribute on the <Sites> element e.g. Import=""All"" | Import=""Folders"" | Import=""Files""");
-                    writer.WriteComment(@"You can disconnect permission inheritance (if wrongfully inheriting) by setting IgnoreInheritance=""false""");
-                    serializer.Serialize(writer, security);
-                    writer.WriteEndDocument();
-                    writer.Flush();
-                }
-            }
 
-            result.AddFile(tmpFile);
+                XmlSerializer serializer = new XmlSerializer(typeof(security));
+                string tmpFile = Scheduler.Instance.CreateTmpFile();
+                using (TextWriter stream = new StreamWriter(tmpFile))
+                {
+                    using (XmlWriter writer = XmlWriter.Create(stream, new XmlWriterSettings { Indent = true }))
+                    {
+                        writer.WriteStartDocument();
+                        writer.WriteComment(@"You can control what to import on the target by setting the Import attribute on the <Sites> element e.g. Import=""All"" | Import=""Folders"" | Import=""Files""");
+                        writer.WriteComment(@"You can disconnect permission inheritance (if wrongfully inheriting) by setting IgnoreInheritance=""false""");
+                        serializer.Serialize(writer, security);
+                        writer.WriteEndDocument();
+                        writer.Flush();
+                    }
+                }
+
+                result.AddFile(tmpFile);
+            }
+            catch (Exception ex) { Console.WriteLine(ex.Message); Console.WriteLine(ex.InnerException.Message); }
 
             return result;
         }

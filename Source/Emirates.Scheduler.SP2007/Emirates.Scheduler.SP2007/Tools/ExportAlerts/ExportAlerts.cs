@@ -89,30 +89,56 @@ namespace Emirates.Scheduler.SP2007.Tools
                             {
                                 if (spAlert.AlertType == SPAlertType.List)
                                 {
-                                    site.AddAlert(spAlert.User.LoginName,
+                                    string filterpath = spAlert.Properties["Filterpath"] as string;
+                                    string objectType = "list";
+                                    bool isFolder = !String.IsNullOrEmpty(filterpath);
+
+                                    Helper helper = Helper.Instance;
+
+                                    if (!string.IsNullOrEmpty(filterpath))
+                                    {
+                                        filterpath = helper.MapServerRelativeUrl(
+                                            string.Format("/{0}", filterpath).ToLower(),
+                                            permSite.source,
+                                            permSite.target);
+
+                                        objectType = "folder";
+                                    }
+
+                                    site.AddAlert(spAlert.Title,
+                                        spAlert.User.LoginName,
                                         spAlert.List.Title,
                                         spAlert.EventType.ToString(),
                                         spAlert.AlertFrequency.ToString(),
                                         spAlert.AlertType.ToString(),
-                                        string.Empty,
-                                        false);
+                                        filterpath,
+                                        objectType);
                                 }
                                 else
                                 {
                                     string url = (spAlert.List.BaseType == SPBaseType.DocumentLibrary) ?
                                         spAlert.Item.File.ServerRelativeUrl :
                                         spAlert.Item.Url;
-                                    bool isFile = (spAlert.List.BaseType == SPBaseType.DocumentLibrary) ?
-                                        true :
-                                        false;
-                                    site.AddAlert(spAlert.User.LoginName,
+                                    string objectType = (spAlert.List.BaseType == SPBaseType.DocumentLibrary) ?
+                                        "file" :
+                                        "item";
+
+                                    Helper helper = Helper.Instance;
+
+                                    string updatedUrl = helper.MapServerRelativeUrl(url,
+                                        permSite.source,
+                                        permSite.target);
+                                    url = updatedUrl;
+
+                                    site.AddAlert(spAlert.Title, 
+                                        spAlert.User.LoginName,
                                         spAlert.List.Title,
                                         spAlert.EventType.ToString(),
                                         spAlert.AlertFrequency.ToString(),
                                         spAlert.AlertType.ToString(),
                                         spAlert.ItemID,
                                         url,
-                                        isFile);
+                                        objectType);
                                 }
                             }
                             catch (Exception ex) { Console.WriteLine(ex.Message); }

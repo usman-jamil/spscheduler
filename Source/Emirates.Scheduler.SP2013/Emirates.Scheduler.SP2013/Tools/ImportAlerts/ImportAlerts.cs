@@ -36,6 +36,8 @@ namespace Emirates.Scheduler.SP2013.Tools
                 output.Append(string.Format("updating web: {0,20}" + Environment.NewLine, url));
                 output.Append(string.Format("updating lists" + Environment.NewLine));
                 CheckLists(siteNode, url);
+                output.Append(string.Format("updating folders" + Environment.NewLine));
+                CheckFolders(siteNode, url);
                 output.Append(string.Format("updating items" + Environment.NewLine));
                 CheckItems(siteNode, url);
             }
@@ -55,37 +57,99 @@ namespace Emirates.Scheduler.SP2013.Tools
                 XmlNodeList alertNodes = siteNode.SelectNodes("alert[@type='List']");
                 foreach (XmlNode alertNode in alertNodes)
                 {
+                    string alertTitle = alertNode.Attributes["title"].Value;
                     string listTitle = alertNode.Attributes["list"].Value;
                     string loginName = alertNode.Attributes["user"].Value;
-                    output.Append(string.Format("user: {0,20}...", loginName));
-                    try
+                    string objectType = alertNode.Attributes["object"].Value;
+                    bool isFolder = objectType.ToLower().Equals("folder");
+
+                    if (!isFolder)
                     {
-                        SPList list = web.Lists[listTitle];
-                        SPClaimProviderManager cpm = SPClaimProviderManager.Local;
-                        SPClaim userClaim = cpm.ConvertIdentifierToClaim(loginName, SPIdentifierTypes.WindowsSamAccountName);
-                        SPUser user = web.EnsureUser(userClaim.ToEncodedString());
+                        output.Append(string.Format("user: {0,20}...", loginName));
+                        try
+                        {
+                            SPList list = web.Lists[listTitle];
+                            SPClaimProviderManager cpm = SPClaimProviderManager.Local;
+                            SPClaim userClaim = cpm.ConvertIdentifierToClaim(loginName, SPIdentifierTypes.WindowsSamAccountName);
+                            SPUser user = web.EnsureUser(userClaim.ToEncodedString());
 
-                        string eventType = alertNode.Attributes["event"].Value;
-                        SPEventType spEventType = (SPEventType)Enum.Parse(typeof(SPEventType), eventType);
+                            string eventType = alertNode.Attributes["event"].Value;
+                            SPEventType spEventType = (SPEventType)Enum.Parse(typeof(SPEventType), eventType);
 
-                        string eventFrequency = alertNode.Attributes["frequency"].Value;
-                        SPAlertFrequency spAlertFrequency = (SPAlertFrequency)Enum.Parse(typeof(SPAlertFrequency), eventFrequency);
+                            string eventFrequency = alertNode.Attributes["frequency"].Value;
+                            SPAlertFrequency spAlertFrequency = (SPAlertFrequency)Enum.Parse(typeof(SPAlertFrequency), eventFrequency);
 
-                        string type = alertNode.Attributes["type"].Value;
-                        SPAlertType spAlertType = (SPAlertType)Enum.Parse(typeof(SPAlertType), type);
+                            string type = alertNode.Attributes["type"].Value;
+                            SPAlertType spAlertType = (SPAlertType)Enum.Parse(typeof(SPAlertType), type);
 
-                        SPAlert newAlert = user.Alerts.Add();
-                        newAlert.Title = list.Title;
-                        newAlert.AlertType = spAlertType;
-                        newAlert.List = list;
-                        newAlert.DeliveryChannels = SPAlertDeliveryChannels.Email;
-                        newAlert.EventType = spEventType;
-                        newAlert.AlertFrequency = spAlertFrequency;
-                        newAlert.Status = SPAlertStatus.On;
-                        newAlert.Update(false);
-                        output.Append(string.Format("Complete" + Environment.NewLine));
+                            SPAlert newAlert = user.Alerts.Add();
+                            newAlert.Title = alertTitle;
+                            newAlert.AlertType = spAlertType;
+                            newAlert.List = list;
+                            newAlert.DeliveryChannels = SPAlertDeliveryChannels.Email;
+                            newAlert.EventType = spEventType;
+                            newAlert.AlertFrequency = spAlertFrequency;
+                            newAlert.Status = SPAlertStatus.On;
+                            newAlert.Update(false);
+                            output.Append(string.Format("Complete" + Environment.NewLine));
+                        }
+                        catch (Exception ex) { output.Append(string.Format("error: {0,20}" + Environment.NewLine, ex.Message)); }
                     }
-                    catch (Exception ex) { output.Append(string.Format("error: {0,20}" + Environment.NewLine, ex.Message)); }
+                }
+            }
+        }
+
+        private void CheckFolders(XmlNode siteNode, string url)
+        {
+            using (SPWeb web = new SPSite(url).OpenWeb())
+            {
+                XmlNodeList alertNodes = siteNode.SelectNodes("alert[@type='List']");
+                foreach (XmlNode alertNode in alertNodes)
+                {
+                    string alertTitle = alertNode.Attributes["title"].Value;
+
+                    string listTitle = alertNode.Attributes["list"].Value;
+                    string loginName = alertNode.Attributes["user"].Value; 
+                    string objectType = alertNode.Attributes["object"].Value;
+                    bool isFolder = objectType.ToLower().Equals("folder");
+
+                    if (isFolder)
+                    {
+                        string itemUrl = alertNode.Attributes["url"].Value;
+                        output.Append(string.Format("user: {0,20}...", loginName));
+                        try
+                        {
+                            SPList list = web.Lists[listTitle];
+                            SPClaimProviderManager cpm = SPClaimProviderManager.Local;
+                            SPClaim userClaim = cpm.ConvertIdentifierToClaim(loginName, SPIdentifierTypes.WindowsSamAccountName);
+                            SPUser user = web.EnsureUser(userClaim.ToEncodedString());
+
+                            string eventType = alertNode.Attributes["event"].Value;
+                            SPEventType spEventType = (SPEventType)Enum.Parse(typeof(SPEventType), eventType);
+
+                            string eventFrequency = alertNode.Attributes["frequency"].Value;
+                            SPAlertFrequency spAlertFrequency = (SPAlertFrequency)Enum.Parse(typeof(SPAlertFrequency), eventFrequency);
+
+                            string type = alertNode.Attributes["type"].Value;
+                            SPAlertType spAlertType = (SPAlertType)Enum.Parse(typeof(SPAlertType), type);
+
+                            SPFolder folder = web.GetFolder(itemUrl);
+                            SPListItem item = folder.Item;
+
+                            SPAlert newAlert = user.Alerts.Add();
+
+                            newAlert.Title = alertTitle;
+                            newAlert.AlertType = SPAlertType.Item;
+                            newAlert.Item = item;
+                            newAlert.DeliveryChannels = SPAlertDeliveryChannels.Email;
+                            newAlert.EventType = spEventType;
+                            newAlert.AlertFrequency = spAlertFrequency;
+                            newAlert.Status = SPAlertStatus.On;
+                            newAlert.Update(false);
+                            output.Append(string.Format("Complete" + Environment.NewLine));
+                        }
+                        catch (Exception ex) { output.Append(string.Format("error: {0,20}" + Environment.NewLine, ex.Message)); }
+                    }
                 }
             }
         }
@@ -97,11 +161,12 @@ namespace Emirates.Scheduler.SP2013.Tools
                 XmlNodeList alertNodes = siteNode.SelectNodes("alert[@type='Item']");
                 foreach (XmlNode alertNode in alertNodes)
                 {
+                    string alertTitle = alertNode.Attributes["title"].Value;
                     string listTitle = alertNode.Attributes["list"].Value;
                     string loginName = alertNode.Attributes["user"].Value;
                     int itemId = Int32.Parse(alertNode.Attributes["id"].Value);
                     string itemUrl = alertNode.Attributes["url"].Value;
-                    bool isFile = Boolean.Parse(alertNode.Attributes["isfile"].Value);
+                    string objectType = alertNode.Attributes["object"].Value;
 
                     output.Append(string.Format("user: {0,20}...", loginName));
                     try
@@ -121,7 +186,6 @@ namespace Emirates.Scheduler.SP2013.Tools
                         SPAlertType spAlertType = (SPAlertType)Enum.Parse(typeof(SPAlertType), type);
 
                         SPListItem item = null;
-                        string itemTitle = string.Empty;
                         if(list.BaseType == SPBaseType.DocumentLibrary)
                         {
                             SPFile file = web.GetFile(itemUrl);
@@ -134,12 +198,7 @@ namespace Emirates.Scheduler.SP2013.Tools
 
                         SPAlert newAlert = user.Alerts.Add();
 
-                        if (item.File != null && !string.IsNullOrEmpty(item.File.Name))
-                        {
-                            itemTitle = item.File.Name;
-                        }
-
-                        newAlert.Title = list.Title + " : " + itemTitle;
+                        newAlert.Title = alertTitle;
                         newAlert.AlertType = spAlertType;
                         newAlert.Item = item;
                         newAlert.DeliveryChannels = SPAlertDeliveryChannels.Email;

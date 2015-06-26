@@ -46,14 +46,14 @@ namespace Emirates.Scheduler.SP2007.Tools.Alerts
             alerts = new List<alert>();
         }
 
-        public void AddAlert(string userName, string listName, string eventType, string alertFrequency, string alertType, string url, bool isFile)
+        public void AddAlert(string title, string userName, string listName, string eventType, string alertFrequency, string alertType, string url, string objectType)
         {
-            alerts.Add(new alert(userName, listName, eventType, alertFrequency, alertType, 0, url, isFile));
+            alerts.Add(new alert(title, userName, listName, eventType, alertFrequency, alertType, 0, url, objectType));
         }
 
-        public void AddAlert(string userName, string listName, string eventType, string alertFrequency, string alertType, int itemId, string url, bool isFile)
+        public void AddAlert(string title, string userName, string listName, string eventType, string alertFrequency, string alertType, int itemId, string url, string objectType)
         {
-            alerts.Add(new alert(userName, listName, eventType, alertFrequency, alertType, itemId, url, isFile));
+            alerts.Add(new alert(title, userName, listName, eventType, alertFrequency, alertType, itemId, url, objectType));
         }
     }
 
@@ -62,6 +62,8 @@ namespace Emirates.Scheduler.SP2007.Tools.Alerts
     {
         [XmlAttribute("user")]
         public string userName;
+        [XmlAttribute("title")]
+        public string title;
         [XmlAttribute("list")]
         public string listName;
         [XmlAttribute("event")]
@@ -74,30 +76,32 @@ namespace Emirates.Scheduler.SP2007.Tools.Alerts
         public int itemId;
         [XmlAttribute("url")]
         public string url;
-        [XmlAttribute("isfile")]
-        public bool isFile;
+        [XmlAttribute("object")]
+        public string objectType;
 
         public alert()
         {
             userName = string.Empty;
+            title = string.Empty;
             listName = string.Empty;
             eventType = string.Empty;
             frequency = string.Empty;
             alertType = string.Empty;
             url = string.Empty;
-            isFile = false;
+            objectType = string.Empty;
             itemId = 0;
         }
-        
-        public alert(string userName, string listName, string eventType, string frequency, string alertType, int itemId, string url, bool isFile)
+
+        public alert(string title, string userName, string listName, string eventType, string frequency, string alertType, int itemId, string url, string objectType)
         {
+            this.title = title;
             this.userName = userName;
             this.listName = listName;
             this.eventType = eventType;
             this.frequency = frequency;
             this.alertType = alertType;
             this.itemId = itemId;
-            this.isFile = isFile;
+            this.objectType = objectType;
             this.url = url;
         }
     }
